@@ -36,13 +36,13 @@
                 </h2>
                             </caption>
                 <c:if test="${users != null}">
-                    <input type="hidden" name="id" value="<c:out value='${users.id}' />"/>
+                    <input type="hidden" name="id" value="<c:out value='${people.id}' />"/>
                 </c:if>
                 <tr>
                     <th>Username:</th>
                     <td>
                         <input type="text" name="username" size="45"
-                               value="<c:out value='${users.username}' />"
+                               value="<c:out value='${people.username}' />"
                         />
                     </td>
                 </tr>
@@ -50,7 +50,7 @@
                     <th>Password:</th>
                     <td>
                         <input type="password" name="password" size="45"
-                               value="<c:out value='${users.password}' />"
+                               value="<c:out value='${people.password}' />"
                         />
                     </td>
                 </tr>
@@ -58,7 +58,7 @@
                     <th>First Name:</th>
                     <td>
                         <input type="text" name="firstname" size="45"
-                               value="<c:out value='${users.firstName}' />"
+                               value="<c:out value='${people.firstName}' />"
                         />
                     </td>
                 </tr>
@@ -66,7 +66,7 @@
                     <th>Last Name:</th>
                     <td>
                         <input type="text" name="lastname" size="45"
-                               value="<c:out value='${users.lastName}' />"
+                               value="<c:out value='${people.lastName}' />"
                         />
                     </td>
                 </tr>
@@ -74,7 +74,7 @@
                     <th>Email:</th>
                     <td>
                         <input type="text" name="email" size="45"
-                               value="<c:out value='${users.email}' />"
+                               value="<c:out value='${people.email}' />"
                         />
                     </td>
                 </tr>
