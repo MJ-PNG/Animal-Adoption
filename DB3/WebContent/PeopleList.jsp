@@ -13,6 +13,8 @@
             <a href="new">Add New People</a>
             &nbsp;&nbsp;&nbsp;
             <a href="list">List All People</a>
+                	&nbsp;&nbsp;&nbsp;
+            <a href="initDB">Initialize DB</a>
              
         </h2>
    </center>
@@ -25,19 +27,20 @@
             <th>First Name:</th>
             <th>Last Name:</th>
             <th>EMail: </th>
+            <th>Edit / Delete</th>
         </tr>
         <c:forEach var="people" items="${listPeople}">
             <tr>
-            	<td><c:out value="${users.username}"/></td>
-                <td><c:out value="${users.password}"/></td>
-                <td><c:out value="${users.firstname}"/></td>
-                <td><c:out value="${users.lastname}"/></td>
-                <td><c:out value="${users.email}"/></td>
-                <td>
-                    <a href="edit?id=<c:out value='${people.username}' />">Edit</a>
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    <a href="delete?id=<c:out value='${people.username}' />">Delete</a>
-                </td>
+            	<td><c:out value="${people.username}"/></td>
+                <td><c:out value="${people.password}"/></td>
+                <td><c:out value="${people.firstname}"/></td>
+                <td><c:out value="${people.lastname}"/></td>
+                <td><c:out value="${people.email}"/></td>
+                    
+   
+                                     <td>    <a href="edit?id=<c:out value='${people.getId()}' />">Edit</a>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <a href="delete?id=<c:out value='${people.getId()}' />">Delete</a></td>  
             </tr>
         </c:forEach>
         </table>

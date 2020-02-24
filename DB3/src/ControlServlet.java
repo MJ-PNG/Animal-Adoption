@@ -27,8 +27,6 @@ import java.util.Scanner;
 @WebServlet("/ControlServlet")
 public class ControlServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private static Connection connect = null;
-    private static Statement statement;
     private PeopleDAO peopleDAO;
  
     public void init() {
@@ -66,6 +64,21 @@ public class ControlServlet extends HttpServlet {
             case "/update":
             	updatePeople(request, response);
                 break;
+            case "/initDB":
+            	initDBForm(request,response); 
+            	break;
+            case "/resetDB":
+        		initDB(request,response); 
+            	break;
+            case "/login":
+        		login(request,response); 
+            	break;
+            case "/loginForm":
+            	loginForm(request,response); 
+            	break;
+            case "/welcome":
+            	welcomeForm(request, response);
+            	break;
             default:          	
             	listPeople(request, response);           	
                 break;
@@ -74,53 +87,74 @@ public class ControlServlet extends HttpServlet {
             throw new ServletException(ex);
         }
     }
-    private void clearExistingTables()
-            throws SQLException, IOException, ServletException
-    {
-        statement = connect.createStatement();
-        statement.execute("DROP TABLE IF EXISTS people");
-        System.out.println("CREATION");
-    }
     
-    private void createNewTables()
-            throws SQLException, IOException, ServletException
-    {
-        statement = connect.createStatement();
-        statement.execute("CREATE TABLE IF NOT EXISTS users (" +
-                                  "username varchar(50) NON NULL" +
-                                  "password varchar(24) NON NULL" +
-                                  "firstname varchar(50) NON NULL" +
-                                  "lastname varchar(50) NON NULL" +
-                                  "email varchar(50) NON NULL" +
-                                  ")");
-    }
-    
-  
-    private void addInitialPeople()
-            throws SQLException, IOException, ServletException {
-        
-        Scanner initialPeopleData = new Scanner(new java.io.File("initialPeople.txt"));
-        String username;
-        String password;
-        String firstName;
-        String lastName;
-        String email;
-        
-        People newPeople;
-        
-        while(initialPeopleData.hasNext()) {
-    
-            username = initialPeopleData.next();
-            password = initialPeopleData.next();
-            firstName = initialPeopleData.next();
-            lastName = initialPeopleData.next();
-            email = initialPeopleData.next();
-            
-            newPeople = new People(username, password, firstName, lastName, email);
-            PeopleDAO.insert(newPeople);
-        }
-    }
-    private void listPeople(HttpServletRequest request, HttpServletResponse response)
+    private void initDBForm(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+            RequestDispatcher dispatcher = request.getRequestDispatcher("InitDB.jsp");
+            dispatcher.forward(request, response);
+	}
+
+	private void initDB(HttpServletRequest request, HttpServletResponse response) 
+    		throws SQLException, IOException, ServletException{
+    	System.out.println("Initializing Database");
+    	peopleDAO.wipe();
+    	String username, password, firstname, lastname, email;
+    	People people; 
+    	
+    	//Create root user
+    	username = "root" ;
+		password = "pass1234";
+		firstname = "root";
+		lastname = "user";
+		email = "root@gmail.com";
+		
+        people = new People(username, password, firstname, lastname, email);
+        peopleDAO.insert(people);
+
+    	//Insert 14 other users
+    	for(int i =1; i < 15; i++) {
+    		username = "user" +i;
+    		password = "password" + i;
+    		firstname = "name" + i;
+    		lastname = "last" + i;
+    		email = username + "@gmail.com";
+    		
+	        people = new People(username, password, firstname, lastname, email);
+	        peopleDAO.insert(people);
+    	}
+        response.sendRedirect("list");		
+	}
+	
+	 private void loginForm(HttpServletRequest request, HttpServletResponse response)
+		        throws ServletException, IOException {
+		            RequestDispatcher dispatcher = request.getRequestDispatcher("login.jsp");
+		            dispatcher.forward(request, response);
+			}
+	 
+	private void login(HttpServletRequest request, HttpServletResponse response) 
+    		throws SQLException, IOException, ServletException{
+		
+		 String username = request.getParameter("username");
+	     String password = request.getParameter("password");
+	     
+	     if(peopleDAO.findUser(username, password)) {
+	    	 response.sendRedirect("welcome");
+	    	 System.out.println("login successful");
+	     }
+	     else {
+	    	 response.sendRedirect("loginForm");
+	     }
+	     
+	     
+	}
+	
+	private void welcomeForm(HttpServletRequest request, HttpServletResponse response)
+	        throws ServletException, IOException {
+	            RequestDispatcher dispatcher = request.getRequestDispatcher("welcome.jsp");
+	            dispatcher.forward(request, response);
+		}
+
+	private void listPeople(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
         List<People> listPeople = peopleDAO.listAllPeople();
         request.setAttribute("listPeople", listPeople);       
@@ -136,8 +170,8 @@ public class ControlServlet extends HttpServlet {
  
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, ServletException, IOException {
-        String username = request.getParameter("username");
-        People existingPeople = peopleDAO.getPeople(username);
+        int id = Integer.parseInt(request.getParameter("id"));
+        People existingPeople = peopleDAO.getPeople(id);
         RequestDispatcher dispatcher = request.getRequestDispatcher("PeopleForm.jsp");
         request.setAttribute("people", existingPeople);
         dispatcher.forward(request, response);
@@ -146,39 +180,40 @@ public class ControlServlet extends HttpServlet {
  
     private void insertPeople(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-    	String username = request.getParameter("username");
+        String username = request.getParameter("username");
         String password = request.getParameter("password");
-        String firstName = request.getParameter("firstname");
-        String lastName = request.getParameter("lastname");
+        String firstname = request.getParameter("firstname");
+        String lastname = request.getParameter("lastname");
         String email = request.getParameter("email");
-        People newPeople = new People(username, password, firstName, lastName, email);
+        
+        People newPeople = new People(username, password, firstname, lastname, email);
         peopleDAO.insert(newPeople);
         response.sendRedirect("list");
     }
  
     private void updatePeople(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-        int id = Integer.parseInt(request.getParameter("username"));
+        int id = Integer.parseInt(request.getParameter("id"));
+        System.out.println(id);
         
-        System.out.println(username);
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        String firstName = request.getParameter("firstname");
-        String lastName = request.getParameter("lastname");
+        String firstname = request.getParameter("firstname");
+        String lastname = request.getParameter("lastname");
         String email = request.getParameter("email");
-        ;
+      
+        System.out.println(username);
         
-        People people = new People(username, password, firstName, lastName, email);
+        People people = new People(id, username, password, firstname, lastname, email);
         peopleDAO.update(people);
         response.sendRedirect("list");
     }
  
     private void deletePeople(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-        String email = request.getParameter("email");
-    
-        peopleDAO.delete(email);
+        int id = Integer.parseInt(request.getParameter("id"));
+        //People people = new People(id);
+        peopleDAO.delete(id);
         response.sendRedirect("list"); 
     }
-
 }

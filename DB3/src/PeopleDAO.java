@@ -1,3 +1,4 @@
+  
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.DriverManager;
@@ -30,7 +31,6 @@ public class PeopleDAO extends HttpServlet {
 	private PreparedStatement preparedStatement = null;
 	private ResultSet resultSet = null;
 	
-	
 	public PeopleDAO() {
 
     }
@@ -41,20 +41,21 @@ public class PeopleDAO extends HttpServlet {
     protected void connect_func() throws SQLException {
         if (connect == null || connect.isClosed()) {
             try {
-                Class.forName("com.mysql.jdbc.Driver");
+                Class.forName("com.mysql.cj.jdbc.Driver");
             } catch (ClassNotFoundException e) {
                 throw new SQLException(e);
             }
             connect = (Connection) DriverManager
-  			      .getConnection("jdbc:mysql://127.0.0.1:3306/testdb"
-  			          + "user=john&password=pass1234");
+  			      .getConnection("jdbc:mysql://localhost:3306/test?"
+  			          + "user=john&password=pass1234&useSSL=false");
             System.out.println(connect);
         }
     }
     
+    
     public List<People> listAllPeople() throws SQLException {
         List<People> listPeople = new ArrayList<People>();        
-        String sql = "SELECT * FROM student";      
+        String sql = "SELECT * FROM users";      
         connect_func();      
         statement =  (Statement) connect.createStatement();
         ResultSet resultSet = statement.executeQuery(sql);
@@ -63,13 +64,15 @@ public class PeopleDAO extends HttpServlet {
             int id = resultSet.getInt("id");
             String username = resultSet.getString("username");
             String password = resultSet.getString("password");
-            String firstName = resultSet.getString("firstName");
-            String lastName = resultSet.getString("lastName");
-            String email = resultSet.getString("email");");
-             
-            People people = new People(username,password, firstName, lastName, email);
+            String firstname = resultSet.getString("firstname");
+            String lastname = resultSet.getString("lastname");
+            String email = resultSet.getString("email");
+                         
+            People people = new People( id, username, password, firstname, lastname, email);
+
             listPeople.add(people);
         }        
+        
         resultSet.close();
         statement.close();         
         disconnect();        
@@ -84,15 +87,13 @@ public class PeopleDAO extends HttpServlet {
          
     public boolean insert(People people) throws SQLException {
     	connect_func();         
-		String sql = "insert into people (username, password, first name, last name, email) values (?, ?, ?, ?, ?)";;"
+		String sql = "insert into  users(username, password, firstname, lastname, email) values (?, ?, ?, ?, ?)";
 		preparedStatement = (PreparedStatement) connect.prepareStatement(sql);
-		preparedStatement.setString(1, users.username);
-        preparedStatement.setString(2, users.password);
-        preparedStatement.setString(3, users.firstName);
-        preparedStatement.setString(4, users.lastName);
-        preparedStatement.setString(5, users.email);
-        preparedStatement.executeUpdate();
-
+		preparedStatement.setString(1, people.username);
+		preparedStatement.setString(2, people.password);
+		preparedStatement.setString(3, people.firstname);
+		preparedStatement.setString(4, people.lastname);
+		preparedStatement.setString(5, people.email);
 //		preparedStatement.executeUpdate();
 		
         boolean rowInserted = preparedStatement.executeUpdate() > 0;
@@ -101,12 +102,12 @@ public class PeopleDAO extends HttpServlet {
         return rowInserted;
     }     
      
-    public boolean delete(int username) throws SQLException {
-        String sql = "DELETE FROM people WHERE username = ?";        
+    public boolean delete(int peopleid) throws SQLException {
+        String sql = "DELETE FROM users WHERE id = ?";        
         connect_func();
          
         preparedStatement = (PreparedStatement) connect.prepareStatement(sql);
-        preparedStatement.setInt(1, username);
+        preparedStatement.setInt(1, peopleid);
          
         boolean rowDeleted = preparedStatement.executeUpdate() > 0;
         preparedStatement.close();
@@ -115,15 +116,16 @@ public class PeopleDAO extends HttpServlet {
     }
      
     public boolean update(People people) throws SQLException {
-        String sql = "update people set password=?, firstName=?, lastName=?, email=? where username=?";
+        String sql = "update users set username=?, password =?, firstname = ?, lastname = ?,email = ? where id = ?";
         connect_func();
-
-        preparedStatement=(PreparedStatement) connect.prepareStatement(sql);
-        preparedStatement.setString(1, users.username);
-        preparedStatement.setString(2, users.password);
-        preparedStatement.setString(3, users.firstName);
-        preparedStatement.setString(4, users.lastName);
-        preparedStatement.setString(5, users.email);
+        
+        preparedStatement = (PreparedStatement) connect.prepareStatement(sql);
+        preparedStatement.setString(1, people.username);
+        preparedStatement.setString(2, people.password);
+        preparedStatement.setString(3, people.firstname);
+        preparedStatement.setString(4, people.lastname);
+        preparedStatement.setString(5, people.email);
+        preparedStatement.setInt(6, people.id);
          
         boolean rowUpdated = preparedStatement.executeUpdate() > 0;
         preparedStatement.close();
@@ -138,9 +140,9 @@ public class PeopleDAO extends HttpServlet {
 		doGet(request, response);
 	}
 	
-    public People getPeople(int username) throws SQLException {
+    public People getPeople(int id) throws SQLException {
     	People people = null;
-        String sql = "SELECT * FROM people WHERE username = ?";
+        String sql = "SELECT * FROM users WHERE id = ?";
          
         connect_func();
          
@@ -149,12 +151,15 @@ public class PeopleDAO extends HttpServlet {
          
         ResultSet resultSet = preparedStatement.executeQuery();
          
-        if(resultSet.next()){// do we need to include password????
-            String password=resultSet.getString("password");
-            String firstName = resultSet.getString("firstName");
-            String lastName = resultSet.getString("lastName");
+        if (resultSet.next()) {
+        	String firstname = resultSet.getString("firstname");
+            String lastname = resultSet.getString("lastname");
             String email = resultSet.getString("email");
-            people = new People(username, password, firstName, lastName, email);
+            String password = resultSet.getString("password");
+            String username = resultSet.getString("username");
+             
+            people = new People( id, username, password, firstname, lastname, email);
+            System.out.println(people);
         }
          
         resultSet.close();
@@ -162,4 +167,49 @@ public class PeopleDAO extends HttpServlet {
          
         return people;
     }
+
+	public void wipe() throws SQLException{
+		connect_func();
+		
+		String deleteTable = "DROP TABLE IF EXISTS users";
+		String createTable = "CREATE TABLE IF NOT EXISTS users " +
+			"(id INTEGER not NULL AUTO_INCREMENT, " +
+			" username VARCHAR(50) NOT NULL, " + 
+			" password VARCHAR(50) NOT NULL, " + 
+			" firstname VARCHAR(50) NOT NULL, " + 
+			" lastname VARCHAR(50) NOT NULL, " + 
+			" email varchar(50) not NULL," +
+			" PRIMARY KEY ( id ))"; 
+	
+		statement = connect.createStatement();
+	    statement.executeUpdate(deleteTable);
+	    statement.executeUpdate(createTable);
+	    
+	    statement.close();
+	}
+	
+	public Boolean findUser(String username, String password) throws SQLException{
+		
+		connect_func();
+        String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+         
+        
+         
+        preparedStatement = (PreparedStatement) connect.prepareStatement(sql);
+        preparedStatement.setString(1, username);
+        preparedStatement.setString(2, password);
+         
+        ResultSet resultSet = preparedStatement.executeQuery();
+        
+        if (resultSet.next()) {
+
+              
+             return true;
+        }
+        
+        else
+        	return false;
+    
+		
+	}
 }
